@@ -1,0 +1,6 @@
+---
+- name: Include node_exporter install tasks
+  import_tasks: install.yml
+
+- name: Include node_exporter configuration tasks
+  import_tasks: configure.yml

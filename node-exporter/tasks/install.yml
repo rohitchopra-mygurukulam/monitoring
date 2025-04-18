@@ -1,0 +1,31 @@
+---
+- name: Download Node Exporter
+  get_url:
+    url: "{{ node_exporter_download_url }}"
+    dest: "/tmp/{{ node_exporter_tarball_name }}"
+    mode: '0644'
+
+- name: Extract Node Exporter archive
+  unarchive:
+    src: "/tmp/{{ node_exporter_tarball_name }}"
+    dest: /tmp/
+    remote_src: yes
+
+- name: Move node_exporter binary to /usr/local/bin
+  copy:
+    src: "{{ node_exporter_extract_dir }}/node_exporter"
+    dest: "{{ node_exporter_binary_path }}"
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: yes
+
+- name: Clean up extracted files
+  file:
+    path: "{{ node_exporter_extract_dir }}"
+    state: absent
+
+- name: Clean up tarball
+  file:
+    path: "/tmp/{{ node_exporter_tarball_name }}"
+    state: absent
