@@ -1,0 +1,6 @@
+---
+- name: Install Promtail on AWS EC2 instances
+  hosts: tag_Name_roletest
+  become: true
+  roles:
+    - Promtail
