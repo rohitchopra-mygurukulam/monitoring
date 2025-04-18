@@ -1,0 +1,8 @@
+- name: Install Redis Exporter for Prometheus
+  hosts: all
+  become: yes
+  vars:
+    ansible_user: ubuntu
+    ansible_ssh_private_key_file: /Users/praveshkumar/Downloads/AWS.pem
+  roles:
+    - redis_role

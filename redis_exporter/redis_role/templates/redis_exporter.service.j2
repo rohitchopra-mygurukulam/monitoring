@@ -1,0 +1,13 @@
+[Unit]
+Description=Redis Exporter for Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ redis_exporter_user }}
+Group={{ redis_exporter_group }}
+ExecStart=/usr/local/bin/redis_exporter
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
