@@ -1,0 +1,33 @@
+---
+# Ubuntu-specific variables for Promtail installation
+# Package dependencies
+promtail_dependencies:
+  - unzip
+  - curl
+  - systemd
+  - ufw
+# System settings
+promtail_system_group: "{{ promtail_group }}"
+promtail_system_user: "{{ promtail_user }}"
+# Default log paths specific to Ubuntu
+promtail_default_log_paths:
+  - /var/log/syslog
+  - /var/log/auth.log
+  - /var/log/kern.log
+  - /var/log/dpkg.log
+  - /var/log/apt/history.log
+  - /var/log/ubuntu-advantage.log
+# Systemd service settings
+promtail_systemd_service_dir: /lib/systemd/system
+# Default firewall (UFW)
+promtail_firewall_service: ufw
+# Default file permissions
+promtail_file_permissions:
+  owner: "{{ promtail_user }}"
+  group: "{{ promtail_group }}"
+  mode: "0644"
+# Directory permissions
+promtail_dir_permissions:
+  owner: "{{ promtail_user }}"
+  group: "{{ promtail_group }}"
+  mode: "0755"

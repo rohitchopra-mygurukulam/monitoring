@@ -1,0 +1,44 @@
+---
+- name: Detect firewall service (firewalld)
+  command: systemctl is-active firewalld
+  register: firewalld_status
+  failed_when: false
+  changed_when: false
+  check_mode: false
+  tags: promtail
+
+- name: Detect firewall service (ufw)
+  command: systemctl is-active ufw
+  register: ufw_status
+  failed_when: false
+  changed_when: false
+  check_mode: false
+  tags: promtail
+
+- name: Configure firewalld
+  firewalld:
+    port: "{{ promtail_server_port }}/tcp"
+    permanent: true
+    state: enabled
+    zone: public
+  notify: reload firewalld
+  when: firewalld_status.stdout == "active"
+  tags: promtail
+
+- name: Configure ufw
+  ufw:
+    rule: allow
+    port: "{{ promtail_server_port }}"
+    proto: tcp
+  when: ufw_status.stdout == "active"
+  tags: promtail
+
+- name: Configure iptables (Amazon Linux/CentOS/RHEL)
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ promtail_server_port }}"
+    jump: ACCEPT
+    comment: "Allow promtail traffic"
+  when: firewalld_status.stdout != "active" and ufw_status.stdout != "active" and (ansible_os_family == "RedHat" or ansible_distribution == "Amazon")
+  tags: promtail

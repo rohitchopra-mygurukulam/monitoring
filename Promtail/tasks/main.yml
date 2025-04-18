@@ -1,0 +1,157 @@
+---
+- name: Include Ubuntu specific variables
+  include_vars: "main.yml"
+
+
+- name: Create promtail group
+  group:
+    name: "{{ promtail_group }}"
+    state: present
+    system: true
+  tags: promtail
+
+- name: Create promtail user
+  user:
+    name: "{{ promtail_user }}"
+    group: "{{ promtail_group }}"
+    home: "{{ promtail_positions_dir }}"
+    shell: "/sbin/nologin"
+    system: true
+    createhome: false
+  tags: promtail
+
+- name: Create promtail directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ promtail_user }}"
+    group: "{{ promtail_group }}"
+    mode: 0755
+  with_items:
+    - "{{ promtail_config_dir }}"
+    - "{{ promtail_positions_dir }}"
+  tags: promtail
+
+- name: Check if promtail is installed
+  stat:
+    path: "{{ promtail_install_dir }}/promtail"
+  register: promtail_binary
+  tags: promtail
+
+- name: Get currently installed promtail version
+  command: "{{ promtail_install_dir }}/promtail --version"
+  register: promtail_current_version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: promtail_binary.stat.exists
+  tags: promtail
+
+- name: Set upgrade flag if version mismatch
+  set_fact:
+    promtail_upgrade: true
+  when: >
+    promtail_binary.stat.exists and
+    promtail_current_version.stdout is defined and
+    promtail_current_version.stdout is search("version " + promtail_version) == false
+  tags: promtail
+
+- name: Create temporary download directory
+  tempfile:
+    state: directory
+    suffix: promtail
+  register: promtail_temp_dir
+  when: not promtail_binary.stat.exists or promtail_upgrade | default(false)
+  tags: promtail
+
+- name: Download promtail
+  get_url:
+    url: "{{ promtail_download_url }}"
+    dest: "{{ promtail_temp_dir.path }}/promtail.zip"
+    mode: 0644
+  when: not promtail_binary.stat.exists or promtail_upgrade | default(false)
+  tags: promtail
+
+- name: Install unzip (required for extracting zip files)
+  package:
+    name: unzip
+    state: present
+  become: yes
+  tags: promtail
+
+- name: Extract promtail
+  unarchive:
+    src: "{{ promtail_temp_dir.path }}/promtail.zip"
+    dest: "{{ promtail_temp_dir.path }}"
+    remote_src: true
+  when: not promtail_binary.stat.exists or promtail_upgrade | default(false)
+  tags: promtail
+
+- name: Install promtail binary
+  copy:
+    src: "{{ promtail_temp_dir.path }}/promtail-linux-amd64"
+    dest: "{{ promtail_install_dir }}/promtail"
+    owner: "{{ promtail_user }}"
+    group: "{{ promtail_group }}"
+    mode: 0755
+    remote_src: true
+  when: not promtail_binary.stat.exists or promtail_upgrade | default(false)
+  notify:
+    - restart promtail
+  tags: promtail
+
+- name: Create promtail configuration
+  template:
+    src: promtail-config.yml.j2
+    dest: "{{ promtail_config_dir }}/config.yml"
+    owner: "{{ promtail_user }}"
+    group: "{{ promtail_group }}"
+    mode: 0644
+  notify:
+    - restart promtail
+  tags: promtail
+
+- name: Create promtail systemd service file
+  template:
+    src: promtail.service.j2
+    dest: /etc/systemd/system/promtail.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - reload systemd
+    - restart promtail
+  tags: promtail
+
+- name: Configure firewall for promtail
+  include_tasks: firewall.yml
+  tags: promtail
+
+- name: Ensure promtail service is enabled and started
+  systemd:
+    name: promtail
+    state: "{{ promtail_state }}"
+    enabled: "{{ promtail_service_enabled }}"
+    daemon_reload: true
+  tags: promtail
+
+- name: Clean up temporary files
+  file:
+    path: "{{ promtail_temp_dir.path }}"
+    state: absent
+  when: promtail_temp_dir.path is defined
+  tags: promtail
+
+- name: Check if promtail is accessible
+  uri:
+    url: "http://localhost:{{ promtail_server_port }}/ready"
+    method: GET
+    status_code: 200
+    timeout: 5
+  register: promtail_health_check
+  retries: 5
+  delay: 5
+  until: promtail_health_check.status == 200
+  changed_when: false
+  check_mode: false
+  tags: promtail

@@ -1,0 +1,17 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: true
+  listen: reload systemd
+
+- name: restart promtail
+  systemd:
+    name: promtail
+    state: restarted
+  listen: restart promtail
+
+- name: reload firewalld
+  systemd:
+    name: firewalld
+    state: reloaded
+  listen: reload firewalld

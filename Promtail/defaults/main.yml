@@ -1,0 +1,37 @@
+---
+# Promtail version and download URL
+promtail_version: "2.9.2"
+promtail_download_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip"
+
+# User and group settings
+promtail_user: "promtail"
+promtail_group: "promtail"
+
+# Installation directories
+promtail_install_dir: "/usr/local/bin"
+promtail_config_dir: "/etc/promtail"
+promtail_positions_dir: "/var/lib/promtail"
+
+# Service configuration
+promtail_service_enabled: true
+promtail_state: "started"
+
+# Default port
+promtail_server_port: 9080
+
+# Loki configuration
+promtail_loki_url: "http://10.0.5.110:3100/loki/api/v1/push"
+
+# Log configuration
+promtail_log_level: "info"
+promtail_scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+
+# Additional configuration options
+promtail_extra_args: []
