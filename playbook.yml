@@ -1,0 +1,6 @@
+---
+- hosts: tag_Name_dev_otms_redis_ec2 
+  remote_user: ubuntu
+  become: yes
+  roles:
+    - postgres_exporter

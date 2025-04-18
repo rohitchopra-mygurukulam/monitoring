@@ -1,0 +1,8 @@
+postgres_exporter_version: "0.15.0"
+postgres_exporter_user: "postgres_exporter"
+postgres_exporter_group: "postgres_exporter"
+postgres_exporter_shell: "/usr/sbin/nologin"
+postgres_exporter_db: "yourdb"
+postgres_exporter_password: "yourpassword"
+postgres_exporter_host: "localhost"
+postgres_exporter_port: "5432"
