@@ -9,7 +9,8 @@
 
 ---
 - name: Install Redis Exporter on AWS EC2 instances
-  hosts: tag_Name_dev_otms_redis_ec2
+  # hosts: tag_Name_dev_otms_redis_ec2
+  hosts: tag_Name_prod_otms_redis_ec2
   become: true
   roles:
     - redis_role
