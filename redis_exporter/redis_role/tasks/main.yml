@@ -51,8 +51,8 @@
       After=network-online.target
 
       [Service]
-      User=prometheus
-      Group=prometheus
+      User=ubuntu
+      Group=ubuntu
       ExecStart=/usr/local/bin/redis_exporter
       Restart=always
 
