@@ -5,6 +5,12 @@
   when: ansible_os_family == "Debian"
   become: true
 
+- name: Create postgres_exporter system group
+  ansible.builtin.group:
+    name: "{{ postgres_exporter_group }}"
+    system: yes
+  become: true
+
 - name: Create postgres_exporter system user
   ansible.builtin.user:
     name: "{{ postgres_exporter_user }}"
