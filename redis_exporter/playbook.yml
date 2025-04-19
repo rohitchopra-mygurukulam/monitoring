@@ -12,4 +12,4 @@
   hosts: tag_Name_dev_otms_redis_ec2
   become: true
   roles:
-    - Promtail
+    - redis_role
