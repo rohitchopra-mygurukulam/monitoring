@@ -1,6 +1,13 @@
+# ---
+# - hosts: tag_Name_dev_otms_redis_ec2 
+#   remote_user: ubuntu
+#   become: yes
+#   roles:
+#     - postgres_exporter
+
 ---
-- hosts: tag_Name_dev_otms_redis_ec2 
-  remote_user: ubuntu
-  become: yes
+- name: Install Postgres Exporter on AWS EC2 instances
+  hosts: tag_Name_dev_otms_postgresql_ec2
+  become: true
   roles:
     - postgres_exporter
