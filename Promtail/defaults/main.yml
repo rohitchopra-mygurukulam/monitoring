@@ -1,4 +1,3 @@
----
 # Promtail version and download URL
 promtail_version: "2.9.2"
 promtail_download_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip"
@@ -24,9 +23,11 @@ promtail_loki_url: "http://10.0.5.110:3100/loki/api/v1/push"
 
 # Log configuration
 promtail_log_level: "info"
-###########Employeee##################
+
+# Scrape configurations
 promtail_scrape_configs:
-- job_name: systemd-journal1
+  ########### Employee ##################
+  - job_name: systemd-journal1
     journal:
       max_age: 12h
       labels:
@@ -35,6 +36,7 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'employee-api\.service'
         action: keep
+
   - job_name: employee-api-file-logs
     static_configs:
       - targets:
@@ -42,8 +44,9 @@ promtail_scrape_configs:
         labels:
           job: employee-api
           __path__: /var/log/employee-api.log
-###########Salary##################
-- job_name: systemd-journal2
+
+  ########### Salary ##################
+  - job_name: systemd-journal2
     journal:
       max_age: 12h
       labels:
@@ -52,6 +55,7 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'salary-api\.service'
         action: keep
+
   - job_name: salary-api-file-logs
     static_configs:
       - targets:
@@ -59,8 +63,9 @@ promtail_scrape_configs:
         labels:
           job: salary-api
           __path__: /var/log/salary-api.log
-###########Attendance##################          
-- job_name: systemd-journal3
+
+  ########### Attendance ##################
+  - job_name: systemd-journal3
     journal:
       max_age: 12h
       labels:
@@ -69,15 +74,17 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'attendance-api\.service'
         action: keep
+
   - job_name: attendance-api-file-logs
     static_configs:
       - targets:
           - localhost
         labels:
           job: attendance-api
-          __path__: /var/log/attendance-api.log        
-###########Scylla##################
-- job_name: systemd-journal4
+          __path__: /var/log/attendance-api.log
+
+  ########### Scylla ##################
+  - job_name: systemd-journal4
     journal:
       max_age: 12h
       labels:
@@ -86,15 +93,17 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'scylla-api\.service'
         action: keep
+
   - job_name: scylla-db-file-logs
     static_configs:
       - targets:
           - localhost
         labels:
           job: scylla-db
-          __path__: /var/log/scylla.log    
-###########Redis##################
-- job_name: systemd-journal5
+          __path__: /var/log/scylla.log
+
+  ########### Redis ##################
+  - job_name: systemd-journal5
     journal:
       max_age: 12h
       labels:
@@ -103,15 +112,17 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'redis\.service'
         action: keep
+
   - job_name: redis-file-logs
     static_configs:
       - targets:
           - localhost
         labels:
           job: redis
-          __path__: /var/log/redis.log            
-###########Postgres##################
-- job_name: systemd-journal6
+          __path__: /var/log/redis.log
+
+  ########### Postgres ##################
+  - job_name: systemd-journal6
     journal:
       max_age: 12h
       labels:
@@ -120,15 +131,17 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'postgres\.service'
         action: keep
+
   - job_name: postgres-file-logs
     static_configs:
       - targets:
           - localhost
         labels:
           job: postgres
-          __path__: /var/log/postgres.log  
-###########Frontend##################
-- job_name: systemd-journal7
+          __path__: /var/log/postgres.log
+
+  ########### Frontend ##################
+  - job_name: systemd-journal7
     journal:
       max_age: 12h
       labels:
@@ -137,13 +150,14 @@ promtail_scrape_configs:
       - source_labels: ['__journal__systemd_unit']
         regex: 'frontend\.service'
         action: keep
+
   - job_name: frontend-file-logs
     static_configs:
       - targets:
           - localhost
         labels:
           job: frontend
-          __path__: /var/log/frontend.log           
+          __path__: /var/log/frontend.log
 
 # Additional configuration options
 promtail_extra_args: []
