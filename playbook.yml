@@ -7,8 +7,8 @@
 
 ---
 - name: Install Node exporter on AWS EC2 instances
-  hosts: dev_otms_all
-  # hosts: tag_Name_dev_otms_frontend,tag_Name_dev_otms_salary,tag_Name_dev_otms_employee,tag_Name_dev_otms_attendance,tag_Name_dev_otms_redis_ec2,tag_Name_dev_otms_postgresql_ec2,tag_Name_dev_otms_scylla_ec2
+
+  hosts: tag_Name_dev_otms_frontend,tag_Name_dev_otms_salary,tag_Name_dev_otms_employee,tag_Name_dev_otms_attendance,tag_Name_dev_otms_redis_ec2,tag_Name_dev_otms_postgresql_ec2,tag_Name_dev_otms_scylla_ec2
   become: true
   roles:
     - node-exporter
