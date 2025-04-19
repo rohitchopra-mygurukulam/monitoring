@@ -4,8 +4,8 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-User={{ promtail_user }}
-Group={{ promtail_group }}
+User=root
+Group=root
 Type=simple
 ExecStart={{ promtail_install_dir }}/promtail \
     -config.file={{ promtail_config_dir }}/config.yml \
