@@ -1,6 +1,6 @@
 ---
 - name: Install and configure postgres_exporter
-  hosts: all
+  hosts: tag_Name_prod_otms_postgresql_ec2
   become: true
   vars:
     github_api_url: "https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest"
