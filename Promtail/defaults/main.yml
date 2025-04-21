@@ -88,10 +88,10 @@ promtail_scrape_configs:
     journal:
       max_age: 12h
       labels:
-        job: scylla-db
+        job: scylladb
     relabel_configs:
       - source_labels: ['__journal__systemd_unit']
-        regex: 'scylla-api\.service'
+        regex: 'scylladb\.service'
         action: keep
 
   - job_name: scylla-db-file-logs
