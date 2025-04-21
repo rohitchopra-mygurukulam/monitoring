@@ -1,75 +1,85 @@
-- name: Set default exporter version if not defined
-  set_fact:
-    postgres_exporter_version: ""
-  when: postgres_exporter_version is not defined
+- name: Install and configure postgres_exporter
+  hosts: all
+  become: yes
+  vars:
+    postgres_exporter_user: postgres
+    postgres_exporter_group: postgres
+    exporter_version: "{{ postgres_exporter_version | default('') }}"
+    download_url: "https://github.com/prometheus-community/postgres_exporter/releases/download"
+    archive_path: "/tmp/postgres_exporter.tar.gz"
+    extract_path: "/tmp/postgres_exporter-{{ exporter_version }}.linux-amd64"
+    binary_src: "{{ extract_path }}/postgres_exporter"
+    binary_dest: "/usr/local/bin/postgres_exporter"
+    systemd_unit_dest: "/etc/systemd/system/postgres_exporter.service"
 
-- name: Install required packages
-  apt:
-    name:
-      - curl
-      - jq
-      - wget
-    state: present
-    update_cache: yes
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - jq
+          - wget
+        state: present
+        update_cache: yes
 
-- name: Get latest release metadata from GitHub
-  uri:
-    url: https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest
-    return_content: yes
-  register: github_release
-  when: postgres_exporter_version == ""
+    - name: Get latest release metadata from GitHub
+      uri:
+        url: https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest
+        return_content: yes
+      register: github_release
+      when: exporter_version == ""
 
-- name: Extract latest version number if not defined
-  set_fact:
-    postgres_exporter_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
-  when: postgres_exporter_version == ""
+    - name: Set exporter version from GitHub if not defined
+      set_fact:
+        exporter_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+      when: exporter_version == ""
 
-- name: Download postgres_exporter archive
-  get_url:
-    url: "https://github.com/prometheus-community/postgres_exporter/releases/download/v{{ postgres_exporter_version }}/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64.tar.gz"
-    dest: "/tmp/postgres_exporter.tar.gz"
-    mode: '0644'
+    - name: Download postgres_exporter archive
+      get_url:
+        url: "{{ download_url }}/v{{ exporter_version }}/postgres_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+        dest: "{{ archive_path }}"
+        mode: '0644'
 
-- name: Extract postgres_exporter archive
-  unarchive:
-    src: /tmp/postgres_exporter.tar.gz
-    dest: /tmp/
-    remote_src: yes
-    creates: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64"
+    - name: Extract postgres_exporter archive
+      unarchive:
+        src: "{{ archive_path }}"
+        dest: /tmp/
+        remote_src: yes
+        creates: "{{ extract_path }}"
 
-- name: Check if postgres_exporter binary exists
-  stat:
-    path: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64/postgres_exporter"
-  register: exporter_binary
+    - name: Check if postgres_exporter binary exists
+      stat:
+        path: "{{ binary_src }}"
+      register: exporter_binary
 
-- name: Fail if postgres_exporter binary is not found
-  fail:
-    msg: "postgres_exporter binary not found. Check extraction step."
-  when: not exporter_binary.stat.exists
+    - name: Fail if postgres_exporter binary is not found
+      fail:
+        msg: "postgres_exporter binary not found. Check extraction step."
+      when: not exporter_binary.stat.exists
 
-- name: Move postgres_exporter binary to /usr/local/bin
-  copy:
-    src: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64/postgres_exporter"
-    dest: "/usr/local/bin/postgres_exporter"
-    mode: '0755'
-    remote_src: yes
+    - name: Move postgres_exporter binary to /usr/local/bin
+      copy:
+        src: "{{ binary_src }}"
+        dest: "{{ binary_dest }}"
+        mode: '0755'
+        remote_src: yes
 
-- name: Ensure exporter binary is owned by correct user/group
-  file:
-    path: /usr/local/bin/postgres_exporter
-    owner: "{{ postgres_exporter_user }}"
-    group: "{{ postgres_exporter_group }}"
-    mode: '0755'
+    - name: Ensure exporter binary is owned by correct user/group
+      file:
+        path: "{{ binary_dest }}"
+        owner: "{{ postgres_exporter_user }}"
+        group: "{{ postgres_exporter_group }}"
+        mode: '0755'
 
-- name: Create systemd service for postgres_exporter
-  template:
-    src: postgres_exporter.service.j2
-    dest: /etc/systemd/system/postgres_exporter.service
-    mode: '0644'
+    - name: Create systemd service for postgres_exporter
+      template:
+        src: postgres_exporter.service.j2
+        dest: "{{ systemd_unit_dest }}"
+        mode: '0644'
 
-- name: Reload systemd and start postgres_exporter
-  systemd:
-    daemon_reload: yes
-    name: postgres_exporter
-    enabled: yes
-    state: started
+    - name: Reload systemd and start postgres_exporter
+      systemd:
+        daemon_reload: yes
+        name: postgres_exporter
+        enabled: yes
+        state: started
