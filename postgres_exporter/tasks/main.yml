@@ -1,6 +1,3 @@
----
-# roles/postgres_exporter/tasks/main.yml
-
 - name: Install required packages
   apt:
     name:
@@ -14,10 +11,12 @@
     url: https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest
     return_content: yes
   register: github_release
+  when: postgres_exporter_version == ""
 
-- name: Extract latest version number
+- name: Extract latest version number if not defined
   set_fact:
     postgres_exporter_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+  when: postgres_exporter_version == ""
 
 - name: Download postgres_exporter archive
   get_url:
@@ -37,31 +36,17 @@
     remote_src: yes
     mode: '0755'
 
-- name: Set ownership to postgres user
+- name: Set ownership to exporter user
   file:
     path: /usr/local/bin/postgres_exporter
-    owner: postgres
-    group: postgres
+    owner: "{{ postgres_exporter_user }}"
+    group: "{{ postgres_exporter_group }}"
     mode: '0755'
 
 - name: Create systemd service for postgres_exporter
-  copy:
+  template:
+    src: postgres_exporter.service.j2
     dest: /etc/systemd/system/postgres_exporter.service
-    content: |
-      [Unit]
-      Description=Prometheus PostgreSQL Exporter
-      After=network.target
-
-      [Service]
-      Type=simple
-      Restart=always
-      User=postgres
-      Group=postgres
-      Environment=DATA_SOURCE_NAME="user=postgres host=/var/run/postgresql/ sslmode=disable"
-      ExecStart=/usr/local/bin/postgres_exporter
-
-      [Install]
-      WantedBy=multi-user.target
 
 - name: Reload systemd and start exporter
   systemd:
