@@ -1,3 +1,8 @@
+- name: Set default exporter version if not defined
+  set_fact:
+    postgres_exporter_version: ""
+  when: postgres_exporter_version is not defined
+
 - name: Install required packages
   apt:
     name:
@@ -5,6 +10,7 @@
       - jq
       - wget
     state: present
+    update_cache: yes
 
 - name: Get latest release metadata from GitHub
   uri:
@@ -22,21 +28,33 @@
   get_url:
     url: "https://github.com/prometheus-community/postgres_exporter/releases/download/v{{ postgres_exporter_version }}/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64.tar.gz"
     dest: "/tmp/postgres_exporter.tar.gz"
+    mode: '0644'
 
-- name: Extract postgres_exporter
+- name: Extract postgres_exporter archive
   unarchive:
     src: /tmp/postgres_exporter.tar.gz
     dest: /tmp/
     remote_src: yes
+    creates: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64"
 
-- name: Move binary to /usr/local/bin
+- name: Check if postgres_exporter binary exists
+  stat:
+    path: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64/postgres_exporter"
+  register: exporter_binary
+
+- name: Fail if postgres_exporter binary is not found
+  fail:
+    msg: "postgres_exporter binary not found. Check extraction step."
+  when: not exporter_binary.stat.exists
+
+- name: Move postgres_exporter binary to /usr/local/bin
   copy:
     src: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64/postgres_exporter"
     dest: "/usr/local/bin/postgres_exporter"
-    remote_src: yes
     mode: '0755'
+    remote_src: yes
 
-- name: Set ownership to exporter user
+- name: Ensure exporter binary is owned by correct user/group
   file:
     path: /usr/local/bin/postgres_exporter
     owner: "{{ postgres_exporter_user }}"
@@ -47,8 +65,9 @@
   template:
     src: postgres_exporter.service.j2
     dest: /etc/systemd/system/postgres_exporter.service
+    mode: '0644'
 
-- name: Reload systemd and start exporter
+- name: Reload systemd and start postgres_exporter
   systemd:
     daemon_reload: yes
     name: postgres_exporter
