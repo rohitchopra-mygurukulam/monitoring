@@ -1,4 +1,7 @@
+postgres_exporter_user: postgres
+postgres_exporter_group: postgres
 postgres_exporter_version: ""
-postgres_exporter_user: "postgres"
-postgres_exporter_group: "postgres"
-data_source_name: "postgresql://postgres:password@postgres-db.aman-dw.in:5432/attendance_db?sslmode=disable"
+download_url: "https://github.com/prometheus-community/postgres_exporter/releases/download"
+archive_path: "/tmp/postgres_exporter.tar.gz"
+binary_dest: "/usr/local/bin/postgres_exporter"
+systemd_unit_dest: "/etc/systemd/system/postgres_exporter.service"
