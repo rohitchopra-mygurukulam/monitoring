@@ -6,7 +6,9 @@ After=network-online.target
 [Service]
 User={{ redis_exporter_user }}
 Group={{ redis_exporter_group }}
-ExecStart=/usr/local/bin/redis_exporter
+ExecStart=/usr/local/bin/redis_exporter \
+  --redis.addr=redis://redis.aman-dw.in:6379 \
+  --redis.password=password
 Restart=always
 
 [Install]
