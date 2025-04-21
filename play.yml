@@ -1,0 +1,93 @@
+---
+- name: Install and configure postgres_exporter
+  hosts: all
+  become: true
+  vars:
+    github_api_url: "https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest"
+    install_dir: "/usr/local/bin"
+    temp_dir: "/tmp"
+    exporter_user: "postgres"
+    exporter_group: "postgres"
+    exporter_service: "postgres_exporter"
+
+  tasks:
+
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - jq
+          - wget
+        state: present
+        update_cache: true
+
+    - name: Get latest postgres_exporter release info
+      uri:
+        url: "{{ github_api_url }}"
+        return_content: true
+      register: github_response
+
+    - name: Extract latest version tag
+      set_fact:
+        exporter_version: "{{ github_response.json.tag_name | regex_replace('^v', '') }}"
+
+    - name: Set download URL
+      set_fact:
+        download_url: "https://github.com/prometheus-community/postgres_exporter/releases/download/v{{ exporter_version }}/postgres_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+
+    - name: Download postgres_exporter archive
+      get_url:
+        url: "{{ download_url }}"
+        dest: "/tmp/postgres_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+
+    - name: Extract archive
+      unarchive:
+        src: "/tmp/postgres_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+        dest: "{{ temp_dir }}"
+        remote_src: yes
+
+    - name: Copy binary to /usr/local/bin
+      copy:
+        src: "{{ temp_dir }}/postgres_exporter-{{ exporter_version }}.linux-amd64/postgres_exporter"
+        dest: "{{ install_dir }}/postgres_exporter"
+        remote_src: yes
+        owner: "{{ exporter_user }}"
+        group: "{{ exporter_group }}"
+        mode: '0755'
+
+    - name: Remove extracted directory
+      file:
+        path: "{{ temp_dir }}/postgres_exporter-{{ exporter_version }}.linux-amd64"
+        state: absent
+
+    - name: Create systemd service file
+      copy:
+        dest: "/etc/systemd/system/{{ exporter_service }}.service"
+        content: |
+          [Unit]
+          Description=Prometheus PostgreSQL Exporter
+          After=network.target
+
+          [Service]
+          Type=simple
+          Restart=always
+          User={{ exporter_user }}
+          Group={{ exporter_group }}
+          Environment=DATA_SOURCE_NAME="user=postgres host=/var/run/postgresql/ sslmode=disable"
+          ExecStart={{ install_dir }}/postgres_exporter
+
+          [Install]
+          WantedBy=multi-user.target
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: true
+
+    - name: Enable postgres_exporter service
+      systemd:
+        name: "{{ exporter_service }}"
+        enabled: true
+        state: started
