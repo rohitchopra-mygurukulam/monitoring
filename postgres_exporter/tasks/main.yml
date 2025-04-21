@@ -4,11 +4,9 @@
   vars:
     postgres_exporter_user: postgres
     postgres_exporter_group: postgres
-    exporter_version: "{{ postgres_exporter_version | default('') }}"
+    postgres_exporter_version: "{{ postgres_exporter_version | default('') }}"
     download_url: "https://github.com/prometheus-community/postgres_exporter/releases/download"
     archive_path: "/tmp/postgres_exporter.tar.gz"
-    extract_path: "/tmp/postgres_exporter-{{ exporter_version }}.linux-amd64"
-    binary_src: "{{ extract_path }}/postgres_exporter"
     binary_dest: "/usr/local/bin/postgres_exporter"
     systemd_unit_dest: "/etc/systemd/system/postgres_exporter.service"
 
@@ -27,16 +25,21 @@
         url: https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest
         return_content: yes
       register: github_release
-      when: exporter_version == ""
+      when: postgres_exporter_version == ""
 
     - name: Set exporter version from GitHub if not defined
       set_fact:
-        exporter_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
-      when: exporter_version == ""
+        postgres_exporter_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+      when: postgres_exporter_version == ""
+
+    - name: Set paths based on determined exporter version
+      set_fact:
+        extract_path: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64"
+        binary_src: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64/postgres_exporter"
 
     - name: Download postgres_exporter archive
       get_url:
-        url: "{{ download_url }}/v{{ exporter_version }}/postgres_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+        url: "{{ download_url }}/v{{ postgres_exporter_version }}/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64.tar.gz"
         dest: "{{ archive_path }}"
         mode: '0644'
 
