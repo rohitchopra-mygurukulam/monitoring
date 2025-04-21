@@ -1,63 +1,71 @@
-- name: Ensure wget is installed (Debian-based only)
-  ansible.builtin.apt:
-    name: wget
+---
+# roles/postgres_exporter/tasks/main.yml
+
+- name: Install required packages
+  apt:
+    name:
+      - curl
+      - jq
+      - wget
     state: present
-  when: ansible_os_family == "Debian"
-  become: true
 
-- name: Create postgres_exporter system group
-  ansible.builtin.group:
-    name: "{{ postgres_exporter_group }}"
-    system: yes
-  become: true
+- name: Get latest release metadata from GitHub
+  uri:
+    url: https://api.github.com/repos/prometheus-community/postgres_exporter/releases/latest
+    return_content: yes
+  register: github_release
 
-- name: Create postgres_exporter system user
-  ansible.builtin.user:
-    name: "{{ postgres_exporter_user }}"
-    group: "{{ postgres_exporter_group }}"
-    shell: "{{ postgres_exporter_shell }}"
-    system: yes
-    create_home: yes
+- name: Extract latest version number
+  set_fact:
+    postgres_exporter_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
 
-- name: Download postgres_exporter
-  ansible.builtin.get_url:
-    url: "{{ postgres_exporter_download_url }}"
+- name: Download postgres_exporter archive
+  get_url:
+    url: "https://github.com/prometheus-community/postgres_exporter/releases/download/v{{ postgres_exporter_version }}/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64.tar.gz"
     dest: "/tmp/postgres_exporter.tar.gz"
-    mode: '0644'
 
 - name: Extract postgres_exporter
-  ansible.builtin.unarchive:
-    src: "/tmp/postgres_exporter.tar.gz"
-    dest: "/tmp/"
+  unarchive:
+    src: /tmp/postgres_exporter.tar.gz
+    dest: /tmp/
     remote_src: yes
 
 - name: Move binary to /usr/local/bin
-  ansible.builtin.copy:
+  copy:
     src: "/tmp/postgres_exporter-{{ postgres_exporter_version }}.linux-amd64/postgres_exporter"
-    dest: "{{ postgres_exporter_bin_path }}"
+    dest: "/usr/local/bin/postgres_exporter"
     remote_src: yes
     mode: '0755'
-  become: true
 
-- name: Create .pgpass file for postgres_exporter user
-  ansible.builtin.copy:
-    dest: "/home/{{ postgres_exporter_user }}/.pgpass"
-    content: "{{ postgres_exporter_host }}:{{ postgres_exporter_port }}:{{ postgres_exporter_db }}:postgres_exporter:{{ postgres_exporter_password }}"
-    owner: "{{ postgres_exporter_user }}"
-    group: "{{ postgres_exporter_group }}"
-    mode: '0600'
+- name: Set ownership to postgres user
+  file:
+    path: /usr/local/bin/postgres_exporter
+    owner: postgres
+    group: postgres
+    mode: '0755'
 
-- name: Create systemd service file
-  ansible.builtin.template:
-    src: postgres_exporter.service.j2
+- name: Create systemd service for postgres_exporter
+  copy:
     dest: /etc/systemd/system/postgres_exporter.service
-    mode: '0644'
-  notify:
-    - Reload systemd
-    - Restart postgres_exporter
+    content: |
+      [Unit]
+      Description=Prometheus PostgreSQL Exporter
+      After=network.target
 
-- name: Enable and start postgres_exporter service
-  ansible.builtin.systemd:
+      [Service]
+      Type=simple
+      Restart=always
+      User=postgres
+      Group=postgres
+      Environment=DATA_SOURCE_NAME="user=postgres host=/var/run/postgresql/ sslmode=disable"
+      ExecStart=/usr/local/bin/postgres_exporter
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd and start exporter
+  systemd:
+    daemon_reload: yes
     name: postgres_exporter
-    enabled: true
+    enabled: yes
     state: started
