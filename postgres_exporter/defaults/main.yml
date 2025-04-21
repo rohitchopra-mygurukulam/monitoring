@@ -1,4 +1,4 @@
 postgres_exporter_version: ""
 postgres_exporter_user: "postgres"
 postgres_exporter_group: "postgres"
-data_source_name: "user=postgres host=/var/run/postgresql/ sslmode=disable"
+data_source_name: "postgresql://postgres:password@postgres-db.aman-dw.in:5432/attendance_db?sslmode=disable"
