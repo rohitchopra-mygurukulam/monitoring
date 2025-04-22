@@ -84,61 +84,28 @@ promtail_scrape_configs:
           __path__: /var/log/attendance-api.log
 
   ########### Scylla ##################
-  - job_name: systemd-journal4
-    journal:
-      max_age: 12h
-      labels:
-        job: scylladb
-    relabel_configs:
-      - source_labels: ['__journal__systemd_unit']
-        regex: 'scylladb\.service'
-        action: keep
-
-  - job_name: scylla-db-file-logs
+  - job_name: scylla-logs
     static_configs:
-      - targets:
-          - localhost
+      - targets: [localhost]
         labels:
-          job: scylla-db
-          __path__: /var/log/scylla.log
+          job: scylla-logs
+          __path__: /var/log/scylla/*.log
 
   ########### Redis ##################
-  - job_name: systemd-journal5
-    journal:
-      max_age: 12h
-      labels:
-        job: redis
-    relabel_configs:
-      - source_labels: ['__journal__systemd_unit']
-        regex: 'redis\.service'
-        action: keep
-
-  - job_name: redis-file-logs
+  - job_name: redis-logs
     static_configs:
-      - targets:
-          - localhost
+      - targets: [localhost]
         labels:
-          job: redis
-          __path__: /var/log/redis.log
+          job: redis-logs
+          __path__: /var/log/redis/redis-server.log
 
   ########### Postgres ##################
-  - job_name: systemd-journal6
-    journal:
-      max_age: 12h
-      labels:
-        job: postgres
-    relabel_configs:
-      - source_labels: ['__journal__systemd_unit']
-        regex: 'postgres\.service'
-        action: keep
-
-  - job_name: postgres-file-logs
+  - job_name: postgres-logs
     static_configs:
-      - targets:
-          - localhost
+      - targets: [localhost]
         labels:
-          job: postgres
-          __path__: /var/log/postgres.log
+          job: postgres-logs
+          __path__: /var/log/postgresql/postgresql-16-main.log
 
   ########### Frontend ##################
   - job_name: systemd-journal7
