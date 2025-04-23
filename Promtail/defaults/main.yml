@@ -84,12 +84,19 @@ promtail_scrape_configs:
           __path__: /var/log/attendance-api.log
 
   ########### Scylla ##################
-  - job_name: scylla-logs
-    static_configs:
-      - targets: [localhost]
-        labels:
-          job: scylla-logs
-          __path__: /var/log/scylla/*.log
+  
+  - job_name: scylla-file-logs
+  static_configs:
+    - targets: [localhost]
+      labels:
+        job: scylla
+        __path__: /var/log/scylla/scylla.log  
+  pipeline_stages:
+    - match:
+        selector: '{job="scylla"}'
+        stages:
+        - drop:
+            expression: "^$"
 
   ########### Redis ##################
   - job_name: redis-logs
