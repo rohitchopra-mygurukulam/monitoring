@@ -86,9 +86,9 @@ promtail_scrape_configs:
   ########### Scylla ##################
   
   - job_name: scylla-file-logs
-  static_configs:
-    - targets: [localhost]
-      labels:
+    static_configs:
+      - targets: [localhost]
+        labels:
         job: scylla
         __path__: /var/log/scylla/scylla.log  
   pipeline_stages:
