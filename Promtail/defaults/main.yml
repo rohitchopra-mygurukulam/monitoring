@@ -85,18 +85,14 @@ promtail_scrape_configs:
 
   ########### Scylla ##################
   
-  - job_name: scylla-file-logs
-   static_configs:
-     - targets: [localhost]
-       labels:
-         job: scylla
-         __path__: /var/log/scylla/scylla.log  
-   pipeline_stages:
-     - match:
-         selector: '{job="scylla"}'
-         stages:
-           - drop:
-               expression: "^$"
+  - job_name: scylla-logs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: scylla-logs
+          host: ${HOSTNAME}
+          __path__: /var/log/scylla/scylla.log
+
 
   ########### Redis ##################
   - job_name: redis-logs
