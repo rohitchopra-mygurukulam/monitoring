@@ -73,7 +73,7 @@
           Restart=always
           User={{ exporter_user }}
           Group={{ exporter_group }}
-          Environment=DATA_SOURCE_NAME="postgresql://postgres:password@192.168.0.52:5432/attendance_db?sslmode=disable"
+          Environment=DATA_SOURCE_NAME="postgresql://postgres:password@postgres-db.aman-dw.in:5432/attendance_db?sslmode=disable"
           ExecStart={{ install_dir }}/postgres_exporter
 
           [Install]
